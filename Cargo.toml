@@ -1,0 +1,11 @@
+[package]
+
+name = "apply-pub-rs"
+version = "0.0.1"
+authors = ["Marvin Löbel <loebel.marvin@gmail.com>"]
+
+[[lib]]
+
+name = "apply-pub-rs"
+plugin = true
+path = "src/lib.rs"
