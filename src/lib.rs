@@ -1,5 +1,5 @@
 /*!
-Attribute for recursivly applying `pub` modifiers to an tree of items.
+A Rust syntax extension for applying the `pub` visibility modifer to many items at once
 
 Right now the attribute applies to every possible child AST element that could have
 public visibility, including:
