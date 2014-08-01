@@ -1,15 +1,28 @@
 /*!
 Attribute for recursivly applying `pub` modifiers to an tree of items.
 
-# Examples
+Right now the attribute applies to every possible child AST element that could have
+public visibility, including:
+
+- `use`
+- `static`
+- `fn`, both standalone and methods/associated ones
+- `mod`
+- `type`, `struct` and `enum`
+- `trait`
+- symbols in `extern {}` blocks.
+
+# Example
 
 To load the extension and use it:
 
-```rust,ignore
-#[phase(plugin)]
-extern crate apply_pub;
+```rust
+#![feature(phase)]
 
-#[apply_pub(descendants)]
+#[phase(plugin)]
+extern crate apply_pub = "apply-pub-rs";
+
+#[apply_pub]
 mod foo {
     fn bar() {}
     mod baz {
@@ -19,7 +32,7 @@ mod foo {
 
 fn main() {
     foo::bar();
-    for::baz::qux();
+    foo::baz::qux();
 }
 ```
 
