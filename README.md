@@ -16,6 +16,13 @@ public visibility, including:
 
 # Example
 
+Add this to your `Cargo.toml`:
+
+```toml
+[dependencies.apply-pub-rs]
+git = "https://github.com/Kimundi/apply-pub-rs"
+```
+
 To load the extension and use it:
 
 ```rust
@@ -36,3 +43,4 @@ fn main() {
     foo::bar();
     foo::baz::qux();
 }
+```
