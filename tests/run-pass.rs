@@ -8,7 +8,7 @@ use libc::c_char;
 #[apply_pub]
 mod foo {
     extern crate core;
-    use baz2 = self::baz;
+    use self::baz as baz2;
     use self::baz::Foo;
     fn bar() { let _: uint = Foo::foo_fn();  }
     mod baz {
