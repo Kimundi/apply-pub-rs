@@ -1,13 +1,11 @@
+language: rust
 env:
   global:
     - secure: k8+7xqjG3tX6M3e3AWfxF8Hu8zecC/kVH9YiAq6LAu6h1X2BjkN+yb2GQDc2p0lnm2foDxslT/X08apkvJXA2mqFg5Q8uKHidxMW2B0J0keD7yZlYnD4HEoQ3sc/zQ0/WxQpdIti4TxWN0YW3tmKCS2fllSdqA7oLodmAHjRNeo=
-install:
-  - curl http://www.rust-lang.org/rustup.sh | sudo sh -
 script:
   - cargo build --verbose
   - cargo test --verbose
-  - rustdoc src/lib.rs
-env:
-  - LD_LIBRARY_PATH=/usr/local/lib
+  - cargo doc
+  - cp -r ./target/doc ./doc
 after_script:
   - curl http://www.rust-ci.org/artifacts/put?t=$RUSTCI_TOKEN | sh
