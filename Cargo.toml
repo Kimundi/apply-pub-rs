@@ -19,7 +19,7 @@ readme = "README.md"
 
 # This is a small list of keywords used to categorize and search for this
 # package.
-keywords = ["macro", "pub", "visibility", "module", "public", "attribute"]
+keywords = ["macro", "visibility", "module", "public", "attribute"]
 
 # This is a string description of the license for this package. Currently
 # crates.io will validate the license provided against a whitelist of known
