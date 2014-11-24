@@ -1,11 +1,34 @@
 [package]
 
-name = "apply-pub-rs"
-version = "0.0.1"
+name = "apply_pub"
+version = "0.0.2"
 authors = ["Marvin Löbel <loebel.marvin@gmail.com>"]
+
+
+# A short blurb about the package. This is not rendered in any format when
+# uploaded to crates.io (aka this is not markdown)
+description = "A Rust syntax extension for applying the `pub` visibility modifer to many items at once."
+
+# These URLs point to more information about the repository
+documentation = "http://rust-ci.org/Kimundi/apply-pub-rs/doc/apply-pub-rs/"
+repository = "https://github.com/Kimundi/apply-pub-rs"
+
+# This points to a file in the repository (relative to this Cargo.toml). The
+# contents of this file are stored and indexed in the registry.
+readme = "README.md"
+
+# This is a small list of keywords used to categorize and search for this
+# package.
+keywords = ["macro", "pub", "visibility", "module", "public", "attribute"]
+
+# This is a string description of the license for this package. Currently
+# crates.io will validate the license provided against a whitelist of known
+# licenses. Multiple licenses can be separated with a `/`
+license = "MIT"
+
 
 [lib]
 
-name = "apply-pub-rs"
+name = "apply_pub"
 plugin = true
-path = "src/lib.rs"
+#path = "src/lib.rs"

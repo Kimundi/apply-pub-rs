@@ -1,7 +1,7 @@
-#![feature(phase, macro_rules, struct_variant)]
+#![feature(phase, macro_rules)]
 
 #[phase(plugin)]
-extern crate apply_pub = "apply-pub-rs";
+extern crate apply_pub;
 extern crate libc;
 use libc::c_char;
 
@@ -21,10 +21,10 @@ mod foo {
             }
             foo::Bar::bar();
         }
-        static FOO: uint = 0u;
-        static BAR: uint = {
+        const FOO: uint = 0u;
+        const BAR: uint = {
             mod bar {
-                static BAR: uint = 100;
+                const BAR: uint = 100;
             }
             bar::BAR
         };
@@ -72,10 +72,10 @@ fn test() {
     }
 
     {
-        use foo::baz::{Enum, Var1, Var2, Var3};
-        let _: Enum = Var1;
-        let _ = Var2(0, 1);
-        let _ = Var3 { a: 100 };
+        use foo::baz::Enum;
+        let _: Enum = Enum::Var1;
+        let _ = Enum::Var2(0, 1);
+        let _ = Enum::Var3 { a: 100 };
     }
 
     impl foo::Foo for uint {

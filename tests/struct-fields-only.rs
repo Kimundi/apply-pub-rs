@@ -1,7 +1,7 @@
 #![feature(phase)]
 
 #[phase(plugin)]
-extern crate apply_pub = "apply-pub-rs";
+extern crate apply_pub;
 
 mod foo {
     #[apply_pub]

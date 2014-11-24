@@ -1,7 +1,7 @@
 apply-pub-rs
 ============
 
-A Rust syntax extension for applying the `pub` visibility modifer to many items at once
+A Rust syntax extension for applying the `pub` visibility modifer to many items at once.
 
 Right now the attribute applies to every possible child AST element that could have
 public visibility, including:
@@ -29,7 +29,7 @@ To load the extension and use it:
 #![feature(phase)]
 
 #[phase(plugin)]
-extern crate apply_pub = "apply-pub-rs";
+extern crate apply_pub;
 
 #[apply_pub]
 mod foo {

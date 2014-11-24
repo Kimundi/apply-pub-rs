@@ -20,7 +20,7 @@ To load the extension and use it:
 #![feature(phase)]
 
 #[phase(plugin)]
-extern crate apply_pub = "apply-pub-rs";
+extern crate apply_pub;
 
 #[apply_pub]
 mod foo {
@@ -38,21 +38,23 @@ fn main() {
 
 */
 
-#![crate_name = "apply-pub-rs"]
+#![crate_name = "apply_pub"]
 #![crate_type = "dylib"]
 #![license = "MIT"]
-#![feature(plugin_registrar, managed_boxes)]
+#![feature(plugin_registrar)]
 #![feature(phase)]
 
 extern crate syntax;
 extern crate rustc;
 
+use syntax::ast;
+use syntax::ptr::P;
 use syntax::ast::ViewItem;
 use syntax::ast::{MetaItem, Item, StructField, ViewItemUse, ForeignItem};
 use syntax::ast::{Method, MethDecl, ItemMac, UnnamedField, NamedField};
 use syntax::ast::{Public, ItemFn, ItemImpl, ItemForeignMod, ViewItemExternCrate};
 use syntax::codemap::Span;
-use syntax::ext::base::{ExtCtxt, ItemModifier};
+use syntax::ext::base::{ExtCtxt, SyntaxExtension, ItemModifier};
 use syntax::fold::Folder;
 use syntax::fold;
 use syntax::parse::token;
@@ -60,30 +62,45 @@ use syntax::util::small_vector::SmallVector;
 
 use rustc::plugin::Registry;
 
-use std::gc::{Gc, GC};
+use self::ItemVariant::{
+    IsFn,
+    IsTraitImpl,
+    IsTypeImpl,
+    IsExternBlock,
+    IsOther,
+};
 
-static NAME: &'static str = "apply_pub";
+const NAME: &'static str = "apply_pub";
 
 #[plugin_registrar]
 pub fn plugin_registrar(reg: &mut Registry) {
-    reg.register_syntax_extension(token::intern(NAME), ItemModifier(expand));
+    reg.register_syntax_extension(token::intern(NAME), SyntaxExtension::Modifier(box Expand));
 }
 
 struct ApplyPubFolder {
     parent_item_variant: ItemVariant
 }
 
-fn expand(ctxt: &mut ExtCtxt, span: Span, _meta: Gc<MetaItem>, item: Gc<Item>) -> Gc<Item> {
-    match item.node {
-        ItemMac(..) => {
-            ctxt.span_err(span,
-                format!("Can not apply `#[{}]` to a macro invocation", NAME).as_slice());
-            item
-        }
-        _ => {
-            let expanded = ctxt.expander().fold_item(item).move_iter().nth(0).unwrap();
-            let mut folder = ApplyPubFolder { parent_item_variant: IsOther };
-            folder.fold_item(expanded).move_iter().nth(0).unwrap()
+struct Expand;
+
+impl ItemModifier for Expand {
+    fn expand(&self,
+              ecx: &mut ExtCtxt,
+              span: Span,
+              _meta_item: &ast::MetaItem,
+              item: P<ast::Item>)
+    -> P<ast::Item> {
+        match item.node {
+            ItemMac(..) => {
+                ecx.span_err(span,
+                    format!("Can not apply `#[{}]` to a macro invocation", NAME).as_slice());
+                item
+            }
+            _ => {
+                let expanded = ecx.expander().fold_item(item).into_iter().nth(0).unwrap();
+                let mut folder = ApplyPubFolder { parent_item_variant: IsOther };
+                folder.fold_item(expanded).into_iter().nth(0).unwrap()
+            }
         }
     }
 }
@@ -107,7 +124,7 @@ impl ItemVariant {
 }
 
 impl Folder for ApplyPubFolder {
-    fn fold_view_item(&mut self, vi: &ViewItem) -> ViewItem {
+    fn fold_view_item(&mut self, vi: ViewItem) -> ViewItem {
         let item = fold::noop_fold_view_item(vi, self);
         match item.node {
             ViewItemExternCrate(..) => item,
@@ -115,7 +132,7 @@ impl Folder for ApplyPubFolder {
         }
     }
 
-    fn fold_item(&mut self, i: Gc<Item>) -> SmallVector<Gc<Item>> {
+    fn fold_item(&mut self, i: P<Item>) -> SmallVector<P<Item>> {
         let parent_item_variant = self.parent_item_variant;
 
         let item_variant = match i.node {
@@ -127,19 +144,20 @@ impl Folder for ApplyPubFolder {
         };
 
         self.parent_item_variant = item_variant;
-        let items = fold::noop_fold_item(&*i, self);
+        let items = fold::noop_fold_item(i, self);
         self.parent_item_variant = parent_item_variant;
 
-        items.move_iter().map(|item| {
-            let mut item = (*item).clone();
-            if !parent_item_variant.is_fn() && item_variant.can_be_made_pub() {
-                item.vis = Public;
-            }
-            box(GC) item
+        items.into_iter().map(|item| {
+            item.map(|mut item| {
+                if !parent_item_variant.is_fn() && item_variant.can_be_made_pub() {
+                    item.vis = Public;
+                }
+                item
+            })
         }).collect()
     }
 
-    fn fold_struct_field(&mut self, sf: &StructField) -> StructField {
+    fn fold_struct_field(&mut self, sf: StructField) -> StructField {
         let mut field = fold::noop_fold_struct_field(sf, self);
         match field.node.kind {
             NamedField(_, ref mut vis) => *vis = Public,
@@ -148,26 +166,28 @@ impl Folder for ApplyPubFolder {
         field
     }
 
-    fn fold_method(&mut self, m: Gc<Method>) -> SmallVector<Gc<Method>>  {
-        let methods = fold::noop_fold_method(&*m, self);
+    fn fold_method(&mut self, m: P<Method>) -> SmallVector<P<Method>>  {
+        let methods = fold::noop_fold_method(m, self);
         if !self.parent_item_variant.is_trait_impl() {
-            methods.move_iter().map(|method| {
-                let mut method = (*method).clone();
-                match method.node {
-                    MethDecl(_, _, _, _, _, _, _, ref mut vis) => *vis = Public,
-                    _ => (),
-                }
-                box(GC) method
+            methods.into_iter().map(|method| {
+                method.map(|mut method| {
+                    match method.node {
+                        MethDecl(_, _, _, _, _, _, _, ref mut vis) => *vis = Public,
+                        _ => (),
+                    }
+                    method
+                })
             }).collect()
         } else {
             methods
         }
     }
 
-    fn fold_foreign_item(&mut self, ni: Gc<ForeignItem>) -> Gc<ForeignItem> {
-        let foreign_item = fold::noop_fold_foreign_item(&*ni, self);
-        let mut foreign_item = (*foreign_item).clone();
-        foreign_item.vis = Public;
-        box (GC) foreign_item
+    fn fold_foreign_item(&mut self, ni: P<ForeignItem>) -> P<ForeignItem> {
+        let foreign_item = fold::noop_fold_foreign_item(ni, self);
+        foreign_item.map(|mut foreign_item| {
+            foreign_item.vis = Public;
+            foreign_item
+        })
     }
 }
